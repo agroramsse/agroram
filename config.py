@@ -1,7 +1,7 @@
 import argparse
 class query_config:
     # number of query samples
-    sample_num = 1000
+    sample_num = 500
 
 class dataset_config:
         

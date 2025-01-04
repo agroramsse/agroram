@@ -35,9 +35,9 @@ pts, pts_dict, x_range, y_range, z_range = load_dataset_3d(dataset_path, type_=t
 print(colored('Creating a segment tree from the 3d points...', 'blue'))
 seg_tree_3d = SegmentTree3D(pts_dict)
 
-merged_sgtree= merge_dim_trees(seg_tree_3d)
-with open(f'temp/{dataset_name}.pkl', 'wb') as f:
-    pickle.dump(merged_sgtree, f)
+# merged_sgtree= merge_dim_trees(seg_tree_3d)
+# with open(f'temp/{dataset_name}.pkl', 'wb') as f:
+#     pickle.dump(merged_sgtree, f)
 
 # Print tree stats
 print('Number of nodes:', seg_tree_3d.count_nodes())

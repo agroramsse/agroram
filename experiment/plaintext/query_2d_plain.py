@@ -37,10 +37,10 @@ print(colored('Creating a segment tree from the data_dict...', 'blue'))
 seg_tree_2d = SegmentTree2D(pts_dict)
 
 # create merged segment tree and store as pickle file
-merged_sgtree= merge_dim_trees(seg_tree_2d)
+# merged_sgtree= merge_dim_trees(seg_tree_2d)
 
-with open(f'temp/{dataset_name}.pkl', 'wb') as f:
-    pickle.dump(merged_sgtree, f)
+# with open(f'temp/{dataset_name}.pkl', 'wb') as f:
+#     pickle.dump(merged_sgtree, f)
 
 
 # Print tree stats

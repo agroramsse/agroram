@@ -87,8 +87,8 @@ print(colored('Merging the segment trees into a single big tree', 'blue'))
 merged_sgtree= merge_dim_trees(seg_tree_2d)
 
 # save the merged segment tree as pickle file in temp directory
-with open(f'temp/merged_sgtree_{dataset_name}.pkl', 'wb') as f:
-    pickle.dump(merged_sgtree, f)
+# with open(f'temp/merged_sgtree_{dataset_name}.pkl', 'wb') as f:
+#     pickle.dump(merged_sgtree, f)
 
 # apply the merged segment tree to the ORAM
 print(colored('Applying the merged segment tree to the ORAM...', 'blue'))
