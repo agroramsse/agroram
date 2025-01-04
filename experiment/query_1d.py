@@ -15,12 +15,9 @@ from termcolor import colored
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utils import count_range_nodes, generate_random_query, write_csv
-
 from config import query_config
 
-# utility functions
-# def next_power_of_2(x):
-#     return 1 if x == 0 else 2 ** (x - 1).bit_length()
+
 
 # Loading the amazon book 1D dataset for the 1D segment tree
 import csv
@@ -44,6 +41,9 @@ with open(dataset_config.dataset_path, 'r') as file:
     for row in reader:
         data.append(int(row[0]))
 
+
+# remove duplicates from the data
+data = list(set(data))
 data.sort()
 
 print('The data loaded from csv- size:',len(data))
@@ -53,9 +53,6 @@ print('The range of values in the data list:',data[0], data[-1])
 # defining the domain values range
 domain = (data[0], data[-1])
 print('domain range', domain)
-
-# print first 10 elements of the data
-# print('First 10 elements of the data:', data[:20])
 
 # make dictionary from the data, assicate each value with 1
 data_dict = {val: 1 for val in data}
@@ -104,28 +101,6 @@ o_segmenttree = OSegmentTree("./", accesses_per_level=dataset_config.access_per_
 
 
 print('-'*50,colored(f'\033[1m1D {dataset_name} dataset: ORAM statistics\033[0m', 'green'),'-'*40)
-# store the segment tree node identifiers and their corresponding data in a dictionary, the following list contains elements in the form of Node(tag=2046, identifier=2046, data=8)
-# tree_data = seg_tree.tree.all_nodes()
-# # the data is the value of the node
-# data_dict = {node.identifier: node.data for node in tree_data}
-
-# pad the above data_dict to the next power of 2 of the size of the data_dict
-#TODO: this doesn't do anything right now
-# max_pow2 = next_power_of_2(len(data_dict))
-
-# print('size of the data before padding', data_dict.__len__())
-# # get the max key of the data_dict
-# max_key = max(data_dict.keys())
-# # pad the data_dict to the next power of 2 size of the data_dict with the keys incrementing from the max key of the data_dict
-# data_dict = {k: 1 for k in range(max_key + 1, max_pow2 + max_key + 1)}
-
-# print('size of the data after padding', data_dict.__len__())
-
-# omap.apply(data_dict)
-# (nodes, returned_nodes, access) = omap.search(1)
-# print(nodes)
-# print(returned_nodes)
-# print(access)
 
 # query the segment tree with a sample range
 t_start = time.time()
@@ -140,10 +115,6 @@ print('Calling omap search on qr_result:')
 
 start = time.time()
 (nodes_, access_, time_per_depth_) = o_segmenttree.search(seg_tree.accessed_nodes)
-
-    # print('length of the nodes list: ', len(nodes))
-    # print('returned nodes', len(returned_nodes))
-    # print('number of accesses', len(access))
 print("Time to run query",time.time()-start)
 print("Parallel time to run query",sum(time_per_depth_))
 
@@ -192,9 +163,9 @@ for i in tqdm(range(len(queries))):
     parallel_times.append(sum(time_per_depth_))
 
 # write the qr_h_ to a file
-write_csv(qr_h_, 'qr_h_1d')
+write_csv(qr_h_, f'qr_h_1d_{dataset_name}')
 # write the qr_acs to a file
-write_csv(qr_acs, 'qr_acs_1d')
+write_csv(qr_acs, f'qr_acs_1d{dataset_name}')
 
 print(colored(f'{sample_num} random queries completed successfully', 'green'))
 print(colored('-' * 50, 'green'))   

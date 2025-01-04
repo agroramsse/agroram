@@ -85,7 +85,6 @@ print(colored('-'*100, 'green'))
 #---------------------------------------------------------------------------------
 # *loading 3D nh_64 dataset
 import json
-from segtree import SegmentTree3D
 
 print(colored('\033[1mnh 3d dataset\033[0m', 'green'))
 

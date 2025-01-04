@@ -130,7 +130,7 @@ dmypy.json
 
 # ignore plots and reports files when doing pull and push
 plots/
-reports/
+# reports/
 
 # ignore all heap dumps heap0, heap1, ..., heapN, does not have extension, just 'heap+number'
 heap*
@@ -139,6 +139,7 @@ heap*
 test.py
 segtree_v2.py
 segtree_v3.py
+segtree_v4.py
 main.ipynb
 
 #mac
@@ -147,3 +148,9 @@ main.ipynb
 # # igonre these file   reports/qr_acs_3d.csv
 # reports/qr_acs_3d.csv
 # reports/qr_h_3d.csv
+# ignore /experiments/query_3d_plain.py
+
+# ignore log files
+*.log
+#ignore temp folder
+temp/

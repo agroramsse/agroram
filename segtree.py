@@ -1,7 +1,7 @@
-from treelib import Node, Tree
-from collections import defaultdict
-import math
+import copy
 
+from treelib import Tree
+from collections import defaultdict
 
 
 class SegmentTree1D:
@@ -74,15 +74,20 @@ class SegmentTree1D:
         if R < self.indices[start] or L > self.indices[start + length - 1]:
             return 0
 
-        if 0 != self.tree[node_id].data:
+        # if 0 != self.tree[node_id].data:
+        # check if node_id is in the tree
+        if self.tree.contains(node_id):
             self.access[self.tree.depth(node_id)] += 1
             self.accessed_nodes.append(node_id)
         
         if L <= self.indices[start] and self.indices[start + length - 1] <= R:
-            if self.tree[node_id].data != 0:
+            # if self.tree[node_id].data != 0:
+            if self.tree.contains(node_id):
                 self.qr_result.append(self.tree[node_id].identifier)
                 self.qr_h[self.tree[node_id].identifier] = self.tree.depth(self.tree[node_id])                 
-            return self.tree[node_id].data
+                return self.tree[node_id].data
+            else:
+                return 0
 
         mid = length // 2
         left_child = 2 * node_id + 1
@@ -117,6 +122,49 @@ class SegmentTree1D:
         balanced, _ = check_balance(node_id)
         return balanced
 
+# Function to merge given two binary trees using DFS
+def merge_trees(t1, t2):
+    if (not t1):
+        return t2
+    if (not t2):
+        return t1
+
+    merged_tree = Tree()
+
+    def merge(id=0):
+        # if niehter t1 nor t2 contains the node id, return
+        if not t1.contains(id) and not t2.contains(id):
+            return
+
+        if id == 0:
+            merged_tree.create_node(tag=t1[id].tag, identifier=t1[id].identifier, data=t1[id].data + t2[id].data)
+        else:
+            if t1.contains(id) and t2.contains(id):
+                merged_tree.create_node(t1[id].tag, t1[id].identifier, data = t1[id].data + t2[id].data, parent=(id-1)//2)
+            elif t1.contains(id):
+                merged_tree.create_node(t1[id].tag, t1[id].identifier, data = t1[id].data, parent=(id-1)//2)
+            elif t2.contains(id):
+                merged_tree.create_node(t2[id].tag, t2[id].identifier, data = t2[id].data, parent=(id-1)//2)
+
+        # add the termination condition here that if no children exist for t1 and t2 return
+        if t1.contains(id) and t2.contains(id):
+            if not t1.children(id) and not t2.children(id):
+                return
+        elif t1.contains(id):
+            if not t1.children(id):
+                return
+        elif t2.contains(id):
+            if not t2.children(id):
+                return
+        # Recursively merge left children and right children
+        left = 2 * id + 1
+        right = 2 * id + 2
+        merge(left)
+        merge(right)
+    
+    merge(id=0)
+    return merged_tree
+
 class SegmentTree2D:
     def __init__(self, data):
         self.data = data
@@ -135,17 +183,23 @@ class SegmentTree2D:
     def build(self, data, node_id, start, length):
         if length == 1:
             x = self.x_indices[start]
+            # y-strip associated with the x
             y_data = {y: data[(x, y)] for (xk, y) in data.keys() if xk == x}
             y_unique = set([d[1] for d in data.keys()])
             y_data_prime = {y: y_data[y] if y in y_data.keys() else 0 for y in y_unique}
             st1d = SegmentTree1D(y_data_prime)
-            self.st1d_h = max (st1d.height(), self.st1d_h) 
+            st1d_nodes = st1d.tree.all_nodes()
+            for node in st1d_nodes:
+                if node.data == 0:
+                    if st1d.tree.contains(node.identifier):
+                        st1d.tree.remove_node(node.identifier)
+
+            self.st1d_h = max(st1d.height(), self.st1d_h) 
 
             if node_id == 0:
-                self.tree.create_node(tag=f'{node_id}', identifier=node_id, data=st1d, subtree=st1d.tree)
+                self.tree.create_node(tag=f'{node_id}', identifier=node_id, data=st1d)
             else:
                 self.tree.create_node(tag=f'{node_id}', identifier=node_id, data=st1d, parent=(node_id - 1) // 2)
-                self.tree[node_id].subtree = st1d.tree
                 
         else:
             mid = length // 2
@@ -160,62 +214,12 @@ class SegmentTree2D:
             self.build(data, left_child, start, mid)
             self.build(data, right_child, start + mid, length - mid)
 
-            left_tree = self.tree[left_child].data.tree
-            right_tree = self.tree[right_child].data.tree
-
-            # combined_data = defaultdict(int)
-            # for idx in left_tree.data:
-            #     combined_data[idx] += left_tree.data[idx]
-            # for idx in right_tree.data:
-            #     combined_data[idx] += right_tree.data[idx]
-            combined_data = defaultdict(int)
-            for node in left_tree.all_nodes():
-                combined_data[node.identifier] += node.data
-            for node in right_tree.all_nodes():
-                combined_data[node.identifier] += node.data
-
-
-            # x = self.x_indices[start]
-            # y_data = {y: data[(x, y)] for (xk, y) in data.keys() if xk == x}
             y_unique = set([d[1] for d in data.keys()])
             y_data_prime = {y: 0 for y in y_unique}            
             y_tree_combined = SegmentTree1D(y_data_prime)
-            for node in y_tree_combined.tree.all_nodes():
-                node.data = combined_data[node.identifier]               
 
-            # combined_tree = SegmentTree1D(combined_data)
+            y_tree_combined.tree = merge_trees(self.tree[left_child].data.tree, self.tree[right_child].data.tree)
             self.tree[node_id].data = y_tree_combined
-            self.tree[node_id].subtree = y_tree_combined.tree
-
-    def update(self, x, y, value, node_id=0, start=0, length=None):
-        if length is None:
-            length = self.nx
-
-        if length == 1:
-            x_idx = self.x_indices[start]
-            self.tree[node_id].data.update(y, value)
-            self.data[(x, y)] = value
-        else:
-            mid = length // 2
-            left_child = 2 * node_id + 1
-            right_child = 2 * node_id + 2
-
-            if start <= self.x_indices.index(x) < start + mid:
-                self.update(x, y, value, left_child, start, mid)
-            else:
-                self.update(x, y, value, right_child, start + mid, length - mid)
-
-            left_tree = self.tree[left_child].data
-            right_tree = self.tree[right_child].data
-
-            combined_data = defaultdict(int)
-            for idx in left_tree.data:
-                combined_data[idx] += left_tree.data[idx]
-            for idx in right_tree.data:
-                combined_data[idx] += right_tree.data[idx]
-
-            combined_tree = SegmentTree1D(combined_data)
-            self.tree[node_id].data = combined_tree
 
 
     def query(self, x1, x2, y1, y2, node_id=0, start=0, length=None):
@@ -230,41 +234,46 @@ class SegmentTree2D:
 
         if x2 < self.x_indices[start] or x1 > self.x_indices[start + length - 1]:
             return 0
-
-        self.access[self.tree.depth(node_id)] += 1
-        self.accessed_nodes.append(node_id)
+        if self.tree.contains(node_id):
+            self.access[self.tree.depth(node_id)] += 1
+            self.accessed_nodes.append(node_id)
 
         if x1 <= self.x_indices[start] and self.x_indices[start + length - 1] <= x2:
+            if self.tree.contains(node_id):
+                qr_data = self.tree[node_id].data.query(y1, y2)
+                # append x and y values to qr_result
+                if qr_data != 0:
+                    for y_result in self.tree[node_id].data.qr_result:
+                        self.qr_result.append(f'{node_id}{y_result}')
+                        self.qr_h[f'{node_id}{y_result}'] = self.tree.depth(self.tree[node_id])+self.tree[node_id].data.qr_h[y_result]+1
+                    
+                    # extend the self.access with the accessed nodes in the 1d segment tree
+                    acsess_1d = self.tree[node_id].data.access
+                    current_level = self.tree.depth(node_id)
+                    for i in range(len(acsess_1d)):
+                        assert  current_level+i+1 in self.access.keys(), f'level {current_level+i+1} does not exist in the access dictionary{self.access}, {self.height()}, access1d:{acsess_1d}'
+                        assert  i in acsess_1d.keys(), f'level {i} does not exist in the acsess_1d dictionary'
+                        self.access[current_level+i+1] += acsess_1d[i]
+                    
+                    max_id_x = max(self.tree._nodes.keys())
+                    max_id_y = max(self.tree[0].data.tree._nodes.keys())
+                    access_ = convert_access_list(max_id_x , 
+                                        max_id_y, nodeid_x= node_id, access_y=self.tree[node_id].data.accessed_nodes)
+                    # append access_y to the accessed_nodes list
+                    for i in range(len(access_)):
+                        self.accessed_nodes.append(access_[i])
 
-            qr_data = self.tree[node_id].data.query(y1, y2)
-            # append x and y values to qr_result
-            if qr_data != 0:
-                for y_result in self.tree[node_id].data.qr_result:
-                    self.qr_result.append(f'{node_id}{y_result}')
-                    self.qr_h[f'{node_id}{y_result}'] = self.tree.depth(self.tree[node_id])+self.tree[node_id].data.qr_h[y_result]+1
+                    # append the accessed nodes in the 1d segment tree to the accessed_nodes_all list
+                    accessed_nodes_1d = self.tree[node_id].data.accessed_nodes
+                    for i in range(len(accessed_nodes_1d)):
+                        self.accessed_nodes_all.append((node_id, accessed_nodes_1d[i]))
+                    
+                    # append the accessed nodes in the 1d segment tree to the accessed_2d dictionary
+                    self.accessed_2d.append({node_id:accessed_nodes_1d})
                 
-                # extend the self.access with the accessed nodes in the 1d segment tree
-                acsess_1d = self.tree[node_id].data.access
-                current_level = self.tree.depth(node_id)
-                for i in range(len(acsess_1d)):
-                    self.access[current_level+i+1] += acsess_1d[i]
-
-                access_ = convert_access_list(max_id_x = self.tree.all_nodes()[-1].identifier, 
-                                    max_id_y=self.tree[node_id].subtree.all_nodes()[-1].identifier, nodeid_x= node_id, access_y=self.tree[node_id].data.accessed_nodes)
-                # append access_y to the accessed_nodes list
-                for i in range(len(access_)):
-                    self.accessed_nodes.append(access_[i])
-
-                # append the accessed nodes in the 1d segment tree to the accessed_nodes_all list
-                accessed_nodes_1d = self.tree[node_id].data.accessed_nodes
-                for i in range(len(accessed_nodes_1d)):
-                    self.accessed_nodes_all.append((node_id, accessed_nodes_1d[i]))
-                
-                # append the accessed nodes in the 1d segment tree to the accessed_2d dictionary
-                self.accessed_2d.append({node_id:accessed_nodes_1d})
-                
-
-            return qr_data
+                return qr_data
+            else:
+                return 0
 
         mid = length // 2
         left_child = 2 * node_id + 1
@@ -281,10 +290,8 @@ class SegmentTree2D:
         return total_nodes
     
     def height(self):
-        # heights = [self.tree.depth()]
-        # for node in self.tree.all_nodes():
-        #     heights.append(node.data.height())
-        return self.tree.depth() + self.st1d_h + 1
+        # Todo: changed from the std1_h to self.tree[0].data.tree.depth() consider this later to be consistent
+        return self.tree.depth() + self.tree[0].data.tree.depth() + 1
     
     def is_balanced(self, node_id=0):
         def check_balance(node_id):
@@ -308,7 +315,6 @@ class SegmentTree2D:
         return balanced
     
     def get_all_nodes(self):
-        # all_nodes = []
         all_nodes_dict = {}
         primary_nodes = self.tree.all_nodes()  # All primary nodes in the 2D segment tree
         
@@ -324,15 +330,69 @@ class SegmentTree2D:
                 all_nodes_dict[f"{primary_node.identifier}{secondary_node.identifier}"] = secondary_node.data
 
         return all_nodes_dict
-    # write a function which returns the number of non-zero nodes in the 2d segment tree
+    # write a function which returns the number of non-empty nodes in the 2d segment tree
     def count_non_empty_nodes(self):
         all_nodes_dict = self.get_all_nodes()
-        return sum(1 for node_data in all_nodes_dict.values() if node_data != 0)
+        return sum([1 for node_data in all_nodes_dict.values() if node_data != 0])
     
     # a function which returns non-empty nodes in the 2d segment tree
     def get_non_empty_nodes(self):
         all_nodes_dict = self.get_all_nodes()
         return {node_id: node_data for node_id, node_data in all_nodes_dict.items() if node_data != 0}
+
+# A function to merge y_trees for 3D segment tree, it is similar to 1D segment tree merge function,
+# Continue: except that instead of summing up the data we should call merge_trees function for their data (z_tres)
+
+def merge_ytrees(st1, st2):
+    # st1 and st2 are 2D segment trees objects
+    y_tree1 = st1.tree
+    y_tree2 = st2.tree
+
+    if not y_tree1:
+        return y_tree2
+    if not y_tree2:
+        return y_tree1
+
+    merged_tree = Tree()
+
+    def merge(id = 0):
+        # if niehter t1 nor t2 contains the node id, return
+        if not y_tree1.contains(id) and not y_tree2.contains(id):
+            return
+
+        if id == 0: # if this is the root node
+            st1d = copy.deepcopy(y_tree1[0].data)
+            st1d.tree = merge_trees(y_tree1[id].data.tree, y_tree2[id].data.tree)
+            merged_tree.create_node(tag=y_tree1[id].tag, identifier=y_tree1[id].identifier, data=st1d)
+
+        else:
+            if y_tree1.contains(id) and y_tree2.contains(id):
+                st1d = copy.deepcopy(y_tree1[0].data)
+                st1d.tree = merge_trees(y_tree1[id].data.tree, y_tree2[id].data.tree)
+                merged_tree.create_node(y_tree1[id].tag, y_tree1[id].identifier,data = st1d , parent=(id-1)//2)
+            elif y_tree1.contains(id):
+                merged_tree.create_node(y_tree1[id].tag, y_tree1[id].identifier, data = y_tree1[id].data, parent=(id-1)//2)
+            elif y_tree2.contains(id):
+                merged_tree.create_node(y_tree2[id].tag, y_tree2[id].identifier, data = y_tree2[id].data, parent=(id-1)//2)
+
+        # add the termination condition here that if no children exist for t1 and t2 return
+        if y_tree1.contains(id) and y_tree2.contains(id):
+            if not y_tree1.children(id) and not y_tree2.children(id):
+                return
+        elif y_tree1.contains(id):
+            if not y_tree1.children(id):
+                return
+        elif y_tree2.contains(id):
+            if not y_tree2.children(id):
+                return
+        # Recursively merge left children and right children
+        left = 2 * id + 1
+        right = 2 * id + 2
+        merge(left)
+        merge(right)
+
+    merge(id=0)
+    return merged_tree
 
 class SegmentTree3D:
     def __init__(self, data):
@@ -350,11 +410,20 @@ class SegmentTree3D:
     def build(self, data, node_id, start, length):
         if length == 1:
             x = self.x_indices[start]
+            # yz associated with the x
             yz_data = {(y, z): data[(x, y, z)] for (xk, y, z) in data.keys() if xk == x}
             yz_unique = set([(d[1], d[2]) for d in data.keys()])
-            yz_data_prime = {yz: yz_data[yz] if yz in yz_data.keys() else 0 for yz in yz_unique}            
+            yz_data_prime = {yz: yz_data[yz] if yz in yz_data.keys() else 0 for yz in yz_unique}          
             st2d = SegmentTree2D(yz_data_prime)
             self.st2d_h = max(st2d.height(), self.st2d_h)
+            # Remove the empty nodes from the 2d segment tree
+            for node in st2d.tree.all_nodes():
+                    if st2d.tree.contains(node.identifier):
+                        if  node.data.tree:
+                            if (node.data.tree[0].data == 0):
+                                st2d.tree.remove_node(node.identifier)
+                        else:
+                            st2d.tree.remove_node(node.identifier)
 
             if node_id == 0:
                 self.tree.create_node(tag=f'{node_id}', identifier=node_id, data=st2d, subtree=st2d.tree)
@@ -374,52 +443,16 @@ class SegmentTree3D:
             self.build(data, left_child, start, mid)
             self.build(data, right_child, start + mid, length - mid)
 
-            left_tree = self.tree[left_child].data
-            right_tree = self.tree[right_child].data
+            left_tree = self.tree[left_child].data # left y_tree
+            right_tree = self.tree[right_child].data # right y_tree
 
             # creating a new 2d segment tree and copy the merged values of the left and right 2d segment trees into the new 2d segment tree
             yz_unique = set([(d[1], d[2]) for d in data.keys()])
             yz_data_prime = {yz: 0 for yz in yz_unique}            
             yz_tree_combined = SegmentTree2D(yz_data_prime)
-            # yz_tree_combined = SegmentTree2D(yz_data)
-
-            for node_y in yz_tree_combined.tree.all_nodes():
-                for node_z in node_y.data.tree.all_nodes():
-                    node_z.data = left_tree.tree[node_y.identifier].data.tree[node_z.identifier].data + right_tree.tree[node_y.identifier].data.tree[node_z.identifier].data
-    
+            # Merging the ytrees using merge_trees function
+            yz_tree_combined.tree = merge_ytrees(left_tree, right_tree)
             self.tree[node_id].data = yz_tree_combined
-            self.tree[node_id].subtree = yz_tree_combined.tree
-
-
-    def update(self, x, y, z, value, node_id=0, start=0, length=None):
-        if length is None:
-            length = self.nx
-
-        if length == 1:
-            x_idx = self.x_indices[start]
-            self.tree[node_id].data.update(y, z, value)
-            self.data[(x, y, z)] = value
-        else:
-            mid = length // 2
-            left_child = 2 * node_id + 1
-            right_child = 2 * node_id + 2
-
-            if start <= self.x_indices.index(x) < start + mid:
-                self.update(x, y, z, value, left_child, start, mid)
-            else:
-                self.update(x, y, z, value, right_child, start + mid, length - mid)
-
-            left_tree = self.tree[left_child].data
-            right_tree = self.tree[right_child].data
-
-            combined_data = defaultdict(int)
-            for idx in left_tree.data:
-                combined_data[idx] += left_tree.data[idx]
-            for idx in right_tree.data:
-                combined_data[idx] += right_tree.data[idx]
-
-            combined_tree = SegmentTree2D(combined_data)
-            self.tree[node_id].data = combined_tree
 
     def query(self, x1, x2, y1, y2, z1, z2, node_id=0, start=0, length=None):
         if length is None:
@@ -450,19 +483,20 @@ class SegmentTree3D:
                 
                 accessed_nodes_2d = self.tree[node_id].data.accessed_2d
                 access_y =[]
+
                 for access in accessed_nodes_2d:
                     # print(access)
                     access_y.append(list(access.keys())[0])
                     
-                    acccess_z = convert_access_list_3d(max_id_x = self.tree.all_nodes()[-1].identifier, 
-                                    max_id_y=self.tree[node_id].subtree.all_nodes()[-1].identifier, 
-                                    max_id_z=self.tree[node_id].subtree.all_nodes()[-1].subtree.all_nodes()[-1].identifier, 
+                    acccess_z = convert_access_list_3d(max_id_x = max(self.tree._nodes.keys()), 
+                                    max_id_y=max(self.tree[0].data.tree._nodes.keys()), 
+                                    max_id_z=max(self.tree[0].data.tree[0].data.tree._nodes.keys()), 
                                     nodeid_x= node_id, nodeid_y=list(access.keys())[0], access_z=list(access.values())[0])
                     for i in range(len(acccess_z)):
                         self.accessed_nodes.append(acccess_z[i])
 
-                access_ = convert_access_list(max_id_x = self.tree.all_nodes()[-1].identifier, 
-                                    max_id_y=self.tree[node_id].subtree.all_nodes()[-1].identifier, nodeid_x= node_id, access_y=access_y)
+                access_ = convert_access_list(max_id_x = max(self.tree._nodes.keys()), 
+                                    max_id_y=max(self.tree[0].data.tree._nodes.keys()), nodeid_x= node_id, access_y=access_y)
                 
                 # append access_y to the accessed_nodes list
                 for i in range(len(access_)):
@@ -510,7 +544,6 @@ class SegmentTree3D:
         return balanced
 # implementing a get_all_nodes function to get all the nodes in the 3d segment tree
     def get_all_nodes(self):
-        all_nodes = []
         all_nodes_dict = {}
         primary_nodes = self.tree.all_nodes()  # All primary nodes in the 3D segment tree
         
@@ -543,39 +576,6 @@ class SegmentTree3D:
         all_nodes_dict = self.get_all_nodes()
         return {node_id: node_data for node_id, node_data in all_nodes_dict.items() if node_data != 0}
 
-
-# a function to convert the 2-dimensional segment tree to a big merged segment tree
-import copy 
-
-# ToDo this currently works for 2D segment trees only, and I should implement for 3D segment trees
-def merge_dim_trees(sg_tree):
-
-    # copy the sg_tree to the new tree
-    merged_tree = copy.deepcopy(sg_tree)
-
-    # get the x_tree
-    x_tree = merged_tree.tree
-    y_id = len(x_tree.all_nodes())
-
-    max_id_x = x_tree.all_nodes()[-1].identifier
-    max_id_y = x_tree.all_nodes()[-1].data.tree.all_nodes()[-1].identifier
-    # iterate over all nodes of the x_tree
-    x_tree_nodes = x_tree.all_nodes()
-    for x_node in x_tree_nodes:
-        # get the subtree of the x_node
-        y_tree = x_node.subtree
-        # iterate over all nodes of the y_tree
-        y_tree_nodes = y_tree.all_nodes()
-        for y_node in y_tree_nodes: 
-            new_y_id = (max_id_x + 1) + (max_id_y + 1) + (x_node.identifier * ((y_tree_nodes[-1].identifier)+1)) + y_node.identifier            
-            y_tree.update_node(y_node.identifier, identifier=new_y_id)                              
-            # update the tag
-            y_node.tag = f'{new_y_id}'
-            y_id +=1
-        # paste the updated y_tree to x_node as its child
-        x_tree.paste(x_node.identifier,y_tree)
-    return merged_tree
-
 # a function that converts the accessed_nodes of the 2d segment tree to the bigtree indices
 def convert_access_list(max_id_x, max_id_y, nodeid_x, access_y =[]):
     access_list_new =[]
@@ -585,18 +585,8 @@ def convert_access_list(max_id_x, max_id_y, nodeid_x, access_y =[]):
     
     return access_list_new
 
-
-
-import copy
-
-# Function to merge a 3D segment tree
-def merge_dim_trees_3d(sg_tree):
-    """
-    Merges the dimensions of a 3D segment tree into a single hierarchical structure.
-    
-    :param sg_tree: The 3D segment tree object to merge.
-    :return: A merged tree object with updated identifiers and tags.
-    """
+# Function to merge a 2D/3D segment tree into a single hierarchical tree structure
+def merge_dim_trees(sg_tree):
     # Deep copy the segment tree to avoid modifying the original
     merged_tree = copy.deepcopy(sg_tree)
 
@@ -604,24 +594,23 @@ def merge_dim_trees_3d(sg_tree):
     x_tree = merged_tree.tree
     x_tree_nodes = x_tree.all_nodes()
 
-    # check if the sg_tree is an object of SegmentTree3D
+    max_id_x = max(x_tree._nodes.keys())
+    max_id_y_prev = max(x_tree.all_nodes()[0].data.tree._nodes.keys())
+
     if isinstance(sg_tree, SegmentTree3D):
-        # calculate the maximum identifier for each dimension
-        max_id_x = x_tree_nodes[-1].identifier
-        max_id_y_prev = x_tree_nodes[-1].data.tree.all_nodes()[-1].identifier
-        max_id_z_prev = x_tree_nodes[-1].data.tree.all_nodes()[-1].data.tree.all_nodes()[-1].identifier
+        max_id_z_prev = max(x_tree.all_nodes()[0].data.tree.all_nodes()[0].data.tree._nodes.keys())
         max_id_ytree = (max_id_x + 1) + (max_id_y_prev + 1) + ((max_id_x + 1) * (max_id_y_prev + 1 ))
 
     # Iterate over all nodes of the x_tree
     for x_node in x_tree_nodes:
         # Get the subtree of the x_node (y_tree)
-        y_tree = x_node.subtree
+        y_tree = copy.deepcopy(x_node.data.tree)
         y_tree_nodes = y_tree.all_nodes()
 
         for y_node in y_tree_nodes:
             if isinstance(sg_tree, SegmentTree3D):
                 # Get the subtree of the y_node (z_tree)
-                z_tree = y_node.subtree
+                z_tree = copy.deepcopy(y_node.data.tree)
                 z_tree_nodes = z_tree.all_nodes()
 
                 for z_node in z_tree_nodes:
@@ -630,22 +619,21 @@ def merge_dim_trees_3d(sg_tree):
                                 (x_node.identifier * (max_id_y_prev + 1) *
                                 (max_id_z_prev + 1)) + ((y_node.identifier) *
                                 (max_id_z_prev + 1)) + z_node.identifier)
-                    
+
                     z_tree.update_node(z_node.identifier, identifier=new_z_id)
                     z_node.tag = f'{new_z_id}'
-                
                 # Paste the updated z_tree back to y_node
                 y_tree.paste(y_node.identifier, z_tree)
 
             # Update the identifiers for y_tree nodes
             new_y_id = (
                 (max_id_x + 1) + (max_id_y_prev + 1) +
-                (x_node.identifier * (y_tree_nodes[-1].identifier + 1)) +
+                (x_node.identifier * (max_id_y_prev + 1)) +
                 y_node.identifier
             )
+
             y_tree.update_node(y_node.identifier, identifier=new_y_id)
             y_node.tag = f'{new_y_id}'
-
         # Paste the updated y_tree back to x_node
         x_tree.paste(x_node.identifier, y_tree)
 
@@ -668,8 +656,8 @@ def convert_access_list_3d(max_id_x, max_id_y, max_id_z, nodeid_x, nodeid_y, acc
 
     for z_id in access_z:
         new_id = (
-            max_id_x + 1 +  (max_id_y+1) + 
-            (max_id_x + 1) * (max_id_y + 1) +
+            (max_id_x + 1) +  (max_id_y+1) + (max_id_z + 1)+
+            ((max_id_x + 1) * (max_id_y + 1)) +
             (nodeid_x * (max_id_y + 1) * (max_id_z + 1)) +
             (nodeid_y * (max_id_z + 1)) +
             z_id
@@ -709,35 +697,19 @@ def segment_tree_example_3d():
     print(seg_tree_3d.tree)
 
     # Query the sum of values in the range [(1, 1, 1), (5, 5, 5)]
-    print(f"Sum of values in range [(1, 1, 1), (3, 3, 3)]: {seg_tree_3d.query(1, 3, 1, 3, 1, 2)}")
+    print(f"Sum of values in range [(1, 1, 1), (3, 3, 2)]: {seg_tree_3d.query(1, 3, 1, 3, 1, 2)}")
 
     # Print tree stats
     print('Number of nodes:', len(seg_tree_3d.get_all_nodes()))
     print('Height of the tree:', seg_tree_3d.height())
     print('Is the tree balanced:', seg_tree_3d.is_balanced())
 
-    # pirnt all nodes in the 3d segment tree
-    # print('All nodes in the 3D segment tree:', seg_tree_3d.get_all_nodes().__len__())
-
-    # all_nodes_dict = seg_tree_3d.get_all_nodes()
-    # print(f"Total nodes (including three dimensions) using the dictionary: {len(all_nodes_dict)}")
-    # for node_id, node_data in all_nodes_dict.items():
-    #     print(f"Node ID: {node_id}, Data: {node_data}")
     print('query results:', seg_tree_3d.qr_result)
     print('query results height:', seg_tree_3d.qr_h)
     print('access:', seg_tree_3d.access)
 
-    # print the sub-trees of the second level and the third level of the 3d segment tree
-    for node in seg_tree_3d.tree.all_nodes():
-        print('Primary node:', node.identifier, 'subtree:', node.subtree)
-        for sub_node in node.subtree.all_nodes():
-            print('Secondary node:', sub_node.identifier, 'subtree:', sub_node.subtree)
-            for sub_sub_node in sub_node.subtree.all_nodes():
-                print('Third node:', sub_sub_node.identifier, 'data:', sub_sub_node.data)
-
-
     # Merge the 3D segment tree
-    merged_big_segtree = merge_dim_trees_3d(seg_tree_3d)
+    merged_big_segtree = merge_dim_trees(seg_tree_3d)
     # print the before and after merge trees
     print('Before merge :', seg_tree_3d.tree)
     print('Merged tree:', merged_big_segtree.tree)
@@ -768,7 +740,7 @@ def segment_tree_example_2d():
     
     # print subtrees of the primary nodes
     for node in seg_tree_2d.tree.all_nodes():
-        print('Primary node:', node.identifier, 'subtree:', node.subtree)
+        print('Primary node:', node.identifier, 'subtree:', node.data.tree)
 
     # Query the sum of values in the range [(1, 1), (7, 3)]
     print(f"Sum of values in range [(1, 3), (1, 3)]: {seg_tree_2d.query(1, 3, 1, 3)}")
@@ -851,7 +823,15 @@ def segment_tree_example_1d():
 
 
 if __name__ == '__main__':
-    # segment_tree_example_1d()
-    # segment_tree_example_2d()
+    
+    print('1D Segment Tree Example:')
+    segment_tree_example_1d()
+    print('-' * 50)
+
+    print('2D Segment Tree Example:')
+    segment_tree_example_2d()
+    print('-' * 50)
+
+    print('3D Segment Tree Example:')
     segment_tree_example_3d()
 

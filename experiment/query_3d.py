@@ -1,5 +1,6 @@
 import sys
 import os
+import pickle
 
 # Add the root directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -9,7 +10,7 @@ import csv
 import time
 
 from termcolor import colored
-from segtree import SegmentTree3D, merge_dim_trees_3d
+from segtree import SegmentTree3D, merge_dim_trees
 from utils import count_range_nodes, generate_random_query, write_csv, load_dataset_3d
 from config import query_config, dataset_config
 
@@ -28,39 +29,6 @@ dataset_name = dataset_path.split('/')[-1].split('.')[0]
 print(colored(f'\033[1m{dataset_name} 3d dataset\033[0m', 'blue'))
 
 pts, pts_dict, x_range, y_range, z_range = load_dataset_3d(dataset_path, type_=type_)
-
-# print(colored('\033[1mnh 3d dataset\033[0m', 'blue'))
-
-# with open(dataset_config.dataset_path) as fp:
-#     pts = json.load(fp)
-
-# num_dims = len(pts[0])
-# pts = list(set(map(tuple, pts))) # Remove duplicates
-# slice the first 100 points
-# pts = pts[:100]
-
-# print('size of the dataset:', len(pts))
-
-# # sorting 3d points
-# pts = sorted(pts, key=lambda x: (x[0], x[1], x[2]))
-
-# # calculating the unique x, y, z values
-# unique_x = list(set(sorted([pt[0] for pt in pts])))
-# unique_y = list(set(sorted([pt[1] for pt in pts])))
-# unique_z = list(set(sorted([pt[2] for pt in pts])))
-
-# x_range = (unique_x[0], unique_x[-1])
-# y_range = (unique_y[0], unique_y[-1])
-# z_range = (unique_z[0], unique_z[-1])
-
-
-# # print the length of the unique x, y, z values
-# print('unique x values:', len(unique_x))
-# print('unique y values:', len(unique_y))
-# print('unique z values:', len(unique_z))
-
-# # creating a dictionary from the points and associating each point with 1
-# pts_dict = {pt: 1 for pt in pts}
 
 print(colored('Creating a segment tree from the 3d points...', 'blue'))
 # create a slice of the first 100 points from the points dictionary
@@ -103,7 +71,6 @@ import os
 # print(colored('Building the OMAP...', 'blue'))
 # omap = OMapE("./", total_accesses=1)
 print(colored('Building the O Segment Tree for 3d dataset...', 'blue'))
-# define access per level for the values [ 1  2  4  6  9 13 17 25 36 50 62 77 88 97 96 93 90 69 43 20  8]
 # access_per_level = [1,2,4,6,9,13,17,25,36,50,62,77,88,97,96,93,90,69,43,20,8]
 o_segmenttree = OSegmentTree("./", accesses_per_level=dataset_config.access_per_level)
 
@@ -112,64 +79,27 @@ o_segmenttree = OSegmentTree("./", accesses_per_level=dataset_config.access_per_
 
 # * --------------------------------------------------3D  dataset: ORAM-----------------------------------------------------
 print('-'*50, colored(f'\033[1m3D {dataset_name} dataset ORAM statistics:\033[0m','green'), '-'*50)
-# store the segment tree node idendifiers and their corresponding data in a dictionary
-# data_dict = seg_tree_3d.get_all_nodes()
-# data_dict = seg_tree_3d.get_non_empty_nodes()
-
-# # pad the above data_dict to the next power of 2 of the size of the data_dict
-# max_pow2 = next_power_of_2(len(data_dict))
-
-# print('data_dict original size',data_dict.__len__())
-# # get the max key of the data_dict
-# data_dict = {int(k): v for k, v in data_dict.items()}
-# max_key = max(data_dict.keys())
-# # pad the data_dict to the next power of 2 size of the data_dict with the keys incrementing from the max key of the data_dict
-# data_dict = {k: 0 for k in range(max_key + 1, max_pow2 + max_key + 1)}
-
-# print('length of the data_dict after padding: ', data_dict.__len__())
-# omap.apply(data_dict)
-# print(colored('OMAP successfully built: DONE', 'green'))
 
 # merge the segment tree 3d into the bigtree
 print(colored('Merging the segment trees into a single big tree', 'blue'))
-merged_sgtree = merge_dim_trees_3d(seg_tree_3d)
+merged_sgtree = merge_dim_trees(seg_tree_3d)
+
+with open(f'temp/merged_sgtree_{dataset_name}.pkl', 'wb') as f:
+    pickle.dump(merged_sgtree, f)
+
 # apply the merged segment tree to the ORAM
 print(colored('Applying the merged segment tree to the ORAM...', 'blue'))
 t_start = time.time()
 o_segmenttree.apply(merged_sgtree.tree)
 print("Time to create oblivious structure ", time.time() - t_start)
 print(colored('Merged segment tree applied to the ORAM: DONE', 'blue'))
-# search the ORAM for a sample query
-# print(colored('Test OMAP with the sample range sum query: search([0,1,2,3]) ','blue'))
-# (nodes, returned_nodes, access) = omap.search(1)
-# print(nodes)
-# print(returned_nodes)
-# print(access)
 
 # *Generating queryies and querying the segment tree with the queries, query the omap with the returned nodes
 # query the segment tree with a sample range
 print(colored(f'Test OMAP with the sample range sum query: sum[{range_}] ','blue'))
 print(f"Sum of values in range {range_}: {seg_tree_3d.query(range_[0][0], range_[0][1], range_[1][0], range_[1][1], range_[2][0], range_[2][1])}")
 print('Number of returned nodes:', len(seg_tree_3d.qr_result))
-# print('the qr_result:', seg_tree_2d.qr_result)
 
-# calling omap search on qr_result
-# print(colored(f'Calling omap search on qr_result for the test query:{range_}', 'blue'))
-# nodes_, returned_nodes_, access_ = [], [], []
-# for i in range(len(seg_tree_3d.qr_result)):
-#     (nodes, returned_nodes, access) = omap.search(int(seg_tree_3d.qr_result[i]))
-#     nodes_.extend(nodes)
-#     returned_nodes_.extend(returned_nodes)
-#     access_.extend(access)
-    # print('length of the nodes list: ', len(nodes))
-    # print('returned nodes', len(returned_nodes))
-    # print('number of accesses', len(access))
-
-# print(nodes_)
-# print the nodes, returned nodes and access lists lengths for the sample range query
-# print('length of the nodes list: ', len(nodes_))
-# print('returned nodes', len(returned_nodes_))
-# print('number of accesses', len(access_))
 print(colored(f'searching the osegment tree with the accessed nodes for the range {range_}', 'green'))
 start = time.time()
 (nodes_, access_, time_per_depth_) = o_segmenttree.search(seg_tree_3d.accessed_nodes)
@@ -228,8 +158,8 @@ for i in tqdm(range(len(queries))):
     parallel_times.append(sum(time_per_depth_))
 
 # write the qr_h_ to a file
-write_csv(qr_h_, 'qr_h_3d')
-write_csv(qr_acs, 'qr_acs_3d')
+write_csv(qr_h_, f'qr_h_3d_{dataset_name}')
+write_csv(qr_acs, f'qr_acs_3d_{dataset_name}')
 
 print(colored(f'{sample_num} random queries completed successfully', 'green'))
 print(colored('-' * 50, 'green'))   
