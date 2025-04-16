@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import numpy as np
 
 from termcolor import colored
-from utils import report_h_dev, plot_histogram, load_csv_data, next_power_of_2, barplot
+from utils import report_h_dev, plot_histogram, load_csv_data, next_power_of_2, barplot, load_csv_data_acs_dims
 from config import dataset_config
 
 
@@ -48,8 +48,6 @@ def height_report_query(file_path, dim):
     # plot_histogram(qr_h_avg, max, dim, name=f'qr_h_avg', label='avg')
 
 
-    
-
 def nodes_avg_pow2(data, dim):
     data_= [0 for i in range(len(data))]
     for i in range(len(data)):
@@ -71,15 +69,22 @@ def level_access_data(data, dim):
     data = np.array(data)
 
     avg = np.round(np.mean(data, axis=0), decimals=2)
-    max = np.max(data, axis=0)
+    max_ = np.max(data, axis=0)
     std = np.round(np.std(data, axis=0), decimals=2)
 
     print (f'average of the qr_acs_{dim}d:', avg)
-    print (f'max of the qr_acs_{dim}d:', max)
+    print (f'max of the qr_acs_{dim}d:', max_)
     print (f'std of the qr_acs_{dim}d:', std)
 
-    return avg, max, std   
+    return avg, max_, std   
 
+def max_over_tuple_accesslists(list_of_lists):
+    # Transpose the nested lists using zip
+    transposed = zip(*list_of_lists)
+    # Find max values over columns
+    result = [tuple(map(max, zip(*pairs))) for pairs in transposed]
+    print (f'max over tuple accesslists of dimensions over queries:', result)
+    return result
 
 def std_max_levels(data, dim, max_access_level):
     data = np.array(data)
@@ -101,10 +106,7 @@ def std_max_levels(data, dim, max_access_level):
     return avg
 
 
-    
-
-
-def report(report_path_h, report_path_acs, dim):
+def report(report_path_h, report_path_acs, dim, report_path_acs_dim=None, report_path_acs_lev_2d=None):
     print(colored(f"{'-'*25}QUERY RESULTS STATISTICS REPORT FOR {report_path_h.split('/')[-1].split('.')[0]}{'-'*25}", 'green'))
 
     print(colored('STOPPING HEIGHT REPORT: ', 'blue'))
@@ -122,7 +124,19 @@ def report(report_path_h, report_path_acs, dim):
     print(colored('-'*50, 'blue'))
     print(colored('ACCESS PER LEVEL STATISTICS: ', 'blue'))
     access_data = load_csv_data(report_path_acs)
-    avg, max, std = level_access_data(access_data, dim)
+    avg, max_, std = level_access_data(access_data, dim)
+
+    if report_path_acs_dim:
+        print(colored('Max ACCESS PER LEVEL STATISTICS: for acs_dims ', 'blue'))
+        print(colored('-'*50+'max over tuple accesslists of dimensions over queries'+ '-'*50, 'green'))
+        access_dims = load_csv_data_acs_dims(report_path_acs_dim)
+        result = max_over_tuple_accesslists(access_dims)
+
+    if report_path_acs_lev_2d:
+        print(colored('ACCESS PER LEVEL STATISTICS: for acs_lev_2d ', 'blue'))
+        print(colored('-'*50+'max over accesslists over queries per dimension'+ '-'*50, 'green'))
+        access_lev_2d = load_csv_data_acs_dims(report_path_acs_lev_2d)
+        result = max_over_tuple_accesslists(access_lev_2d)
 
     # print(colored('-'*50+'std over accesslists over queries'+ '-'*50, 'green'))
     # print(np.round(np.mean(std, axis=0), decimals=2))
@@ -158,25 +172,31 @@ def std_over_maxlevels():
 
 if __name__ == '__main__':
     dim = 1
+    # Load the configuration from the file
+    dataset_config.load_from_file()
     # get dim as argparse argument
     parser = argparse.ArgumentParser()
     parser.add_argument('--dim', type=int, default=dim, help='Dimension of the dataset')
     parser.add_argument('--ds', type=str, default=dataset_config.dataset, help='Name of the dataset')
+    parser.add_argument('--stm', type=bool, default=False, help='std over max levels')
     args = parser.parse_args()
     dim = args.dim
     dsname = args.ds
     print(f'dimension of the dataset: {dim}D')
     report_path_height = f'qr_h_{dim}d_{dsname}.csv'
     report_path_access = f'qr_acs_{dim}d_{dsname}.csv'
+    report_path_acs_dim = f'qr_acs_dims_{dim}d_{dsname}.csv'
+    report_path_acs_lev_2d = f'qr_acs_lev_{dim}d_{dsname}.csv'
     print(colored(f'HEIGHT AND ACCESS LEVEL REPORTS FOR THE DATASET:{dsname} ', 'green'))
-    report(report_path_height, report_path_access, dim)
+    report(report_path_height, report_path_access, dim, report_path_acs_dim)
 
 
 
     print(colored('-'*50, 'blue'))
-    # for all the datasets in dataset_config, calculate the std of the accesslists over queries for levels with max values
-    print(colored('STD OF THE ACCESSLISTS OVER QUERIES FOR LEVELS WITH MAX VALUES: ', 'blue'))
-    std_over_maxlevels()
+    if args.stm:
+        # for all the datasets in dataset_config, calculate the std of the accesslists over queries for levels with max values
+        print(colored('STD OF THE ACCESSLISTS OVER QUERIES FOR LEVELS WITH MAX VALUES: ', 'blue'))
+        std_over_maxlevels()
 
     # for dataset in dataset_names:
     #     print(colored(f'loading {dataset}...', 'blue'))

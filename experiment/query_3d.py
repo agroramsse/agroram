@@ -14,6 +14,11 @@ from segtree import SegmentTree3D, merge_dim_trees
 from utils import count_range_nodes, generate_random_query, write_csv, load_dataset_3d
 from config import query_config, dataset_config
 
+
+# Load the configuration from the file
+dataset_config.load_from_file()
+query_config.load_from_file()
+
 print(colored('-'*100, 'green'))
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------

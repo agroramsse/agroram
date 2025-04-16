@@ -15,6 +15,9 @@ from segtree import SegmentTree2D, merge_dim_trees
 from utils import count_range_nodes, generate_random_query, write_csv, load_dataset
 from config import query_config, dataset_config
 
+
+# Load the configuration from the file
+dataset_config.load_from_file()
 # ! Set the number of query samples and dataset name before running the experiment in the config.py file
 
 print(colored('-'*100, 'green'))
@@ -23,7 +26,7 @@ print(colored('-'*100, 'green'))
 # *Loading 2D dataset for the 2D segment tree
 
 dataset_path = dataset_config.dataset_path
-
+print(colored(f'Loading 2D dataset from {dataset_path}...', 'blue'))
 # read the dataset_path extension and store as string in a type_ variable
 type_ = dataset_path.split('.')[-1]
 # from the dataset_path, get the dataset name
@@ -80,19 +83,23 @@ print(colored('-' * 50, 'green'))
 # per query, get the number of returned nodes and access
 print(colored(f'Querying the segment tree with {sample_num} random queries...','blue'))
 
-qr_h_, qr_acs = [], []
+qr_h_, qr_acs, qr_acs_dims, qr_acs_lev_2d = [], [], [], []
 for i in tqdm(range(len(queries))):
     # query the segment tree with the random queries in the form of query (x_1,x_2, y_1,y_2)
     seg_tree_2d.query(queries[i][0][0], queries[i][0][1], queries[i][1][0], queries[i][1][1])
     qr_h_.append(seg_tree_2d.qr_h)
     qr_acs.append(seg_tree_2d.access)
+    qr_acs_dims.append(seg_tree_2d.accessed_dims)
+    qr_acs_lev_2d.append(seg_tree_2d.accessed_levels_2d)
 
 # write the qr_h_ to a file
 write_csv(qr_h_, f'qr_h_2d_{dataset_config.dataset}')
 write_csv(qr_acs, f'qr_acs_2d_{dataset_config.dataset}')
+write_csv(qr_acs_dims, f'qr_acs_dims_2d_{dataset_config.dataset}')
+write_csv(qr_acs_lev_2d, f'qr_acs_lev_2d_{dataset_config.dataset}')
 
 print(colored(f'{sample_num} random queries completed successfully', 'green'))
 print(colored('-' * 50, 'green'))   
 
 # calling the script results.py to generate the report with the argument dim=2
-os.system('python experiment/results.py --dim 2')
+os.system('python3 experiment/results.py --dim 2')

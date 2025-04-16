@@ -141,6 +141,7 @@ segtree_v2.py
 segtree_v3.py
 segtree_v4.py
 main.ipynb
+2drtree.py
 
 #mac
 .DS_Store
@@ -154,3 +155,6 @@ main.ipynb
 *.log
 #ignore temp folder
 temp/
+# ignore old logs
+/old_logs
+

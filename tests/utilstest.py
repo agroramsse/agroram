@@ -83,9 +83,20 @@ def test_write_csv():
     os.remove('reports/test.csv')
     print(colored('write_csv test pass','green'))
 
+# write a test for the max_access_per_level_theory function
+def test_max_access_per_level_theory():
+    # Example usage
+    n_values = [1015, 961]  # Replace with your values for n_1, n_2, ..., n_i
+    d = 2  # Set d (upper limit for i)
+    output = utils.max_access_per_level_theory(n_values, d)
+    print("Result:", output)
+
+
+
 if __name__ == '__main__':
     # test_count_range_nodes()
     # test_random_range()
     # test_generate_random_query()
     # test_load_csv_data()
-    test_write_csv()
+    # test_write_csv()
+    test_max_access_per_level_theory()

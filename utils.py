@@ -7,6 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 import pickle
+import math
+# seed everything random in utils.py
+random.seed(42)
 
 def next_power_of_2(x):
     return 1 if x == 0 else 2 ** (x - 1).bit_length()
@@ -210,6 +213,27 @@ def load_csv_data(file_path):
 
     return qr_h_values
 
+import ast
+
+def load_csv_data_acs_dims(file_path):
+
+    qr_acs_dims = []
+    with open(f'reports/{file_path}') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            qr_acs_dims.append(row[1])
+    
+    # create a new list to store the qr_acs_dims values
+    qr_acs_dims_values = []
+    for qr in qr_acs_dims:
+        # Convert the dictionary string to a dictionary
+        data_dict = ast.literal_eval(qr)
+        # Extract the values and convert them to a list of tuples
+        list_of_tuples = list(data_dict.values())
+        qr_acs_dims_values.append(list_of_tuples)
+
+    return qr_acs_dims_values
+
 
 def barplot(data, dim, name, label='avg'):
     x = np.arange(len(data))
@@ -345,4 +369,143 @@ def load_dataset_3d(path, type_ = 'csv'):
         pts_dict = {pt: 1 for pt in pts}
     
     return pts, pts_dict, x_range, y_range, z_range
+
+# write a theoritical max calculation function for access per level, n is the list of n values in each dimension
+def theorical_max(n):
+    d = len(n)
+
+    if d == 1:
+        return 4
+    
+    max_ = 1
+    for i in range(d):
+        p = 1
+        for j in range(i):
+            p *= (math.ceil((math.log2(n[j])-1)))
+        if i>0 :
+            max_ += (math.pow(2,i))* p
+
+    max_ *= 4
+    return max_
+
+def generate_max_access_list(dataset_name):
+    # Define the dataset array
+    # Updated dataset heights
+    dataset_heights = {
+        # 2D datasets
+        'cali-1024x1024': 22,
+        'spitz-1024x1024': 22,
+        'gowalla_100k': 28,
+        'gowalla_50k': 25,
+        'synthetic_2d_1m': 24,
+        'synthetic_2d_1m_sparse': 24,
+        'synthetic_2d_1m-1024x1024': 22,
+        
+        # 3D datasets
+        'nh_64': 21,
+        'gowalla_3d_23k': 23,
+        'synthetic_3d_1m_128': 24,
+        'synthetic_3d_1m_256': 27
+    }
+    
+    # Updated dataset info
+    dataset_info = [
+        # 2D datasets
+        {"dataset": "cali-1024x1024", "theoretical_max": 76},
+        {"dataset": "spitz-1024x1024", "theoretical_max": 76},
+        {"dataset": "gowalla_100k", "theoretical_max": 100},
+        {"dataset": "gowalla_50k", "theoretical_max": 92},
+        {"dataset": "synthetic_2d_1m", "theoretical_max": 84},
+        {"dataset": "synthetic_2d_1m_sparse", "theoretical_max": 84},
+        {"dataset": "synthetic_2d_1m-1024x1024", "theoretical_max": 76},
+        
+        # 3D datasets
+        {"dataset": "nh_64", "theoretical_max": 444},
+        {"dataset": "gowalla_3d_23k", "theoretical_max": 524},
+        {"dataset": "synthetic_3d_1m_128", "theoretical_max": 628},
+        {"dataset": "synthetic_3d_1m_256", "theoretical_max": 844}
+    ]
+
+    # the max access list from the experiments of running 10000 queries for each dataset
+    qr_acs_max = {
+    # 2D datasets
+    "cali-1024x1024": [1, 2, 4, 6, 10, 16, 17, 20, 23, 24, 28, 32, 33, 33, 32, 28, 20, 13, 10, 6, 3, 2],
+    "spitz-1024x1024": [1, 2, 4, 6, 10, 17, 22, 24, 26, 27, 24, 24, 18, 15, 11, 8, 7, 5, 5, 3, 1, 1],
+    "gowalla_100k": [1, 2, 4, 6, 10, 17, 20, 25, 24, 26, 28, 30, 27, 28, 28, 25, 20, 20, 17, 11, 12, 9, 9, 10, 6, 2, 1, 0],
+    "gowalla_50k": [1, 2, 4, 6, 10, 16, 16, 18, 20, 21, 24, 23, 20, 20, 26, 26, 24, 18, 14, 9, 7, 5, 2, 1, 0],
+    "synthetic_2d_1m": [1, 2, 4, 6, 8, 12, 16, 19, 22, 26, 31, 33, 37, 40, 41, 41, 42, 38, 33, 28, 22, 17, 9, 4],
+    "synthetic_2d_1m_sparse": [1, 2, 4, 6, 10, 17, 24, 29, 33, 38, 40, 44, 46, 49, 49, 48, 44, 39, 33, 28, 22, 15, 9, 4],
+    "synthetic_2d_1m-1024x1024": [1, 2, 4, 6, 10, 17, 22, 27, 33, 35, 38, 40, 44, 43, 43, 40, 36, 34, 28, 20, 12, 4],
+
+    # 3D datasets
+    "gowalla_3d_23k": [1, 2, 4, 6, 10, 16, 24, 31, 47, 62, 75, 82, 75, 68, 63, 54, 43, 37, 26, 14, 7, 2, 0],
+    "synthetic_3d_1m_128": [1, 2, 4, 6, 10, 15, 24, 39, 59, 86, 118, 144, 159, 174, 188, 184, 204, 208, 188, 148, 99, 54, 26, 8],
+    "synthetic_3d_1m_256": [1, 2, 4, 6, 10, 18, 28, 43, 67, 95, 134, 176, 215, 258, 291, 305, 317, 317, 307, 285, 234, 164, 79, 38, 16, 8, 3],
+    "nh_64": [1, 2, 4, 6, 10, 16, 26, 40, 53, 58, 64, 74, 69, 58, 49, 35, 27, 19, 13, 6, 3]
+        }
+
+    
+    # Find the height for the given dataset
+    h = dataset_heights.get(dataset_name)
+    
+    # Find the theoretical max for the given dataset
+    theoretical_max = None
+    for data in dataset_info:
+        if data["dataset"] == dataset_name:
+            theoretical_max = data["theoretical_max"]
+            break
+    
+    if theoretical_max is None:
+        return "Dataset not found"
+    
+    # initialize a list with size h
+    result = [0 for _ in range(h)]
+    
+    # First half: start with 1, multiply by 2 until close to max
+    half_size = h // 2
+    value = 1
+    for i in range(half_size):
+        result[i] = value
+        # If doubling would exceed theoretical max, stop increasing
+        if value * 2 < theoretical_max:
+            value *= 2
+        else:
+            value = theoretical_max
+    
+    # Check if dataset is 3D (to set initial value for second half)
+    is_3d_dataset = any(dataset_name == d["dataset"] for d in dataset_info[7:])  # Check if dataset is in 3D section
+    
+    # Second half: set initial value based on dataset dimension
+    value = 16 if is_3d_dataset else 8
+    
+    for i in range(h - half_size):
+        # fill the result list from the end
+        result[h - i - 1] = value
+        # If doubling would exceed theoretical max, stop increasing
+        if value * 2 < theoretical_max:
+            value *= 2
+        else:
+            value = theoretical_max
+    
+    # print(f"Generated max access list for {dataset_name}: {result}")
+    # print the experimental max access list for the dataset
+    # print(f"Experimental max access list for {dataset_name}: {qr_acs_max.get(dataset_name, 'Not found')}")
+    
+    # compare the generated max access list with the experimental data
+    if dataset_name in qr_acs_max:
+        # check if they have the same length
+        if len(qr_acs_max[dataset_name]) != h:
+            print(f"Warning: Length mismatch for dataset {dataset_name}. Expected {h}, got {len(qr_acs_max[dataset_name])}.")
+            return result
+        experimental_max = qr_acs_max[dataset_name]
+        for i in range(h):
+            if result[i] < experimental_max[i]:
+                print(f"Warning: Generated max access list for {dataset_name} at level {i} is less than experimental data. Adjusting...")
+    
+    return result
+
+        
+
+
+
     

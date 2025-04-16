@@ -179,6 +179,8 @@ class SegmentTree2D:
         self.accessed_nodes=[]
         self.accessed_nodes_all = [] # list of tuples of accessed nodes in the 2d segment tree
         self.accessed_2d = [] # accessed nodes in the 2d segment tree original node ids
+        self.accessed_dims = {} # tuple of (x_count,y_count) per level of the tree (x_nodes_contained, number of y-trees have accessed per level)
+        self.accessed_levels_2d = {} # tuple of (x_tree_access,y_tree_access) per level of the tree 
 
     def build(self, data, node_id, start, length):
         if length == 1:
@@ -231,12 +233,16 @@ class SegmentTree2D:
             self.accessed_nodes = []
             self.accessed_nodes_all = [] # list of tuples of accessed nodes in the 2d segment tree
             self.accessed_2d = [] # accessed nodes in the 2d segment tree original node ids
+            self.accessed_dims = {level: (0,0) for level in range(self.height() + 1)} # tuple of (x_count,y_count) per level of the tree
+            self.accessed_levels_2d = {level: (0,0) for level in range(self.height() + 1)} # tuple of (x_tree_access,y_tree_access) per level of the tree
 
         if x2 < self.x_indices[start] or x1 > self.x_indices[start + length - 1]:
             return 0
         if self.tree.contains(node_id):
             self.access[self.tree.depth(node_id)] += 1
             self.accessed_nodes.append(node_id)
+            # increment the first x_tree_access by 1
+            self.accessed_levels_2d[self.tree.depth(node_id)] = (self.accessed_levels_2d[self.tree.depth(node_id)][0] + 1, self.accessed_levels_2d[self.tree.depth(node_id)][1])
 
         if x1 <= self.x_indices[start] and self.x_indices[start + length - 1] <= x2:
             if self.tree.contains(node_id):
@@ -246,15 +252,23 @@ class SegmentTree2D:
                     for y_result in self.tree[node_id].data.qr_result:
                         self.qr_result.append(f'{node_id}{y_result}')
                         self.qr_h[f'{node_id}{y_result}'] = self.tree.depth(self.tree[node_id])+self.tree[node_id].data.qr_h[y_result]+1
-                    
+
                     # extend the self.access with the accessed nodes in the 1d segment tree
                     acsess_1d = self.tree[node_id].data.access
                     current_level = self.tree.depth(node_id)
+                    self.accessed_dims[current_level] = (self.accessed_dims[current_level][0] + 1, self.accessed_dims[current_level][1])
                     for i in range(len(acsess_1d)):
                         assert  current_level+i+1 in self.access.keys(), f'level {current_level+i+1} does not exist in the access dictionary{self.access}, {self.height()}, access1d:{acsess_1d}'
                         assert  i in acsess_1d.keys(), f'level {i} does not exist in the acsess_1d dictionary'
                         self.access[current_level+i+1] += acsess_1d[i]
-                    
+
+                        # increment the second y_tree_access by acsess_1d[i]
+                        self.accessed_levels_2d[current_level+i+1] = (self.accessed_levels_2d[current_level+i+1][0], self.accessed_levels_2d[current_level+i+1][1] + acsess_1d[i])
+
+                        # add to self.accessed_dims the (x_count,y_count) tuple
+                        if acsess_1d[i] != 0:
+                            self.accessed_dims[current_level+i+1] = (self.accessed_dims[current_level+i+1][0], self.accessed_dims[current_level+i+1][1] + 1) 
+
                     max_id_x = max(self.tree._nodes.keys())
                     max_id_y = max(self.tree[0].data.tree._nodes.keys())
                     access_ = convert_access_list(max_id_x , 
@@ -406,6 +420,7 @@ class SegmentTree3D:
         self.qr_h = {}
         self.access = {}
         self.accessed_nodes = []
+        self.accessed_dims = {} # tuple of (x_count, y_count, z_count) per level of the tree
 
     def build(self, data, node_id, start, length):
         if length == 1:
@@ -460,14 +475,16 @@ class SegmentTree3D:
             self.qr_result = []
             self.qr_h = {}
             self.access = {level: 0 for level in range(self.height() + 1)} 
-            self.accessed_nodes = []           
+            self.accessed_nodes = []
+            self.accessed_dims = {level: (0,0,0) for level in range(self.height() + 1)} # tuple of (x_count, y_count, z_count) per level of the tree           
 
         if x2 < self.x_indices[start] or x1 > self.x_indices[start + length - 1]:
             return 0
         
-        self.access[self.tree.depth(node_id)] += 1
-        self.accessed_nodes.append(node_id)
-
+        if self.tree.contains(node_id):
+            self.access[self.tree.depth(node_id)] += 1
+            self.accessed_nodes.append(node_id)
+            
         if x1 <= self.x_indices[start] and self.x_indices[start + length - 1] <= x2:
             qr_data = self.tree[node_id].data.query(y1, y2, z1, z2)
             # append x and y values to qr_result
@@ -478,8 +495,11 @@ class SegmentTree3D:
                             # extend the self.access with the accessed nodes in the 1d segment tree
                 acsess_2d = self.tree[node_id].data.access
                 current_level = self.tree.depth(node_id)
+                self.accessed_dims[current_level] = (self.accessed_dims[current_level][0] + 1, self.accessed_dims[current_level][1], self.accessed_dims[current_level][2])
+                accessed_dims_2d = self.tree[node_id].data.accessed_dims
                 for i in range(len(acsess_2d)):
                     self.access[current_level+i+1] += acsess_2d[i]
+                    self.accessed_dims[current_level+i+1] = (self.accessed_dims[current_level+i+1][0], self.accessed_dims[current_level+i+1][1] + accessed_dims_2d[i][0], self.accessed_dims[current_level+i+1][2] + accessed_dims_2d[i][1])
                 
                 accessed_nodes_2d = self.tree[node_id].data.accessed_2d
                 access_y =[]
@@ -721,7 +741,10 @@ def segment_tree_example_3d():
     print('Convert access list:', convert_access_list_3d(max_id_x=2, max_id_y=2, max_id_z=2, nodeid_x=1 ,nodeid_y=2, access_z=[0, 1 ,2])) 
 
     # print accessed nodes in the 3d segment tree
-    print('Accessed nodes in the 3d segment tree:', seg_tree_3d.accessed_nodes)   
+    print('Accessed nodes in the 3d segment tree:', seg_tree_3d.accessed_nodes)  
+
+    # print the accessed_dims dictionary
+    print('Accessed dims:', seg_tree_3d.accessed_dims) 
 
 # *2D Segment Tree Example test case
 def segment_tree_example_2d():
@@ -781,6 +804,12 @@ def segment_tree_example_2d():
     for node in seg_tree_2d.tree.all_nodes():
         print(f"Node ID: {node.identifier}, children: {[ch_node.identifier for ch_node in merged_big_segtree.tree.children(node.identifier)]}")
 
+    # print the accessed_dims dictionary
+    print('Accessed dims:', seg_tree_2d.accessed_dims)
+
+    # print the accessed_levels_2d dictionary
+    print('Accessed levels 2d:', seg_tree_2d.accessed_levels_2d)
+
     # print convert access list
     # print('Convert access list:', convert_access_list(6, 6, 3, [0, 1, 5]))
 
@@ -824,14 +853,14 @@ def segment_tree_example_1d():
 
 if __name__ == '__main__':
     
-    print('1D Segment Tree Example:')
-    segment_tree_example_1d()
-    print('-' * 50)
+    # print('1D Segment Tree Example:')
+    # segment_tree_example_1d()
+    # print('-' * 50)
 
-    print('2D Segment Tree Example:')
-    segment_tree_example_2d()
-    print('-' * 50)
+    # print('2D Segment Tree Example:')
+    # segment_tree_example_2d()
+    # print('-' * 50)
 
-    print('3D Segment Tree Example:')
+    # print('3D Segment Tree Example:')
     segment_tree_example_3d()
 

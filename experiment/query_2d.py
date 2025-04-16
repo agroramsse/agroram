@@ -15,7 +15,10 @@ from segtree import SegmentTree2D, merge_dim_trees
 from utils import count_range_nodes, generate_random_query, write_csv, load_dataset
 from config import query_config, dataset_config
 
-# ! Set the number of query samples and dataset name before running the experiment in the config.py file
+
+# Load the configuration from the file
+dataset_config.load_from_file()
+query_config.load_from_file()
 
 print(colored('-'*100, 'green'))
 #---------------------------------------------------------------------------------

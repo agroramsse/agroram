@@ -1,29 +1,23 @@
 import sys
 import os
 import time
+import csv
 
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from config import query_config, dataset_config
-
-from termcolor import colored
-
-# ! Set the number of query samples and dataset name before running the experiment in the config.py file
-
-# Add the root directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utils import count_range_nodes, generate_random_query, write_csv
-from config import query_config
+from config import query_config, dataset_config
+from termcolor import colored
+from segtree import SegmentTree1D
 
+
+# Load the configuration from the file
+dataset_config.load_from_file()
+query_config.load_from_file()
 
 
 # Loading the amazon book 1D dataset for the 1D segment tree
-import csv
-# from segmentree import SegmentTree
-from segtree import SegmentTree1D
-
 print(colored('-'*50, color= 'red'), 
       colored(f' \033[1D Dataset: loading and creating the Segment Tree\033[0m', color= 'red'),
       colored('-'*50, color= 'red'))
@@ -40,7 +34,6 @@ with open(dataset_config.dataset_path, 'r') as file:
     reader = csv.reader(file)
     for row in reader:
         data.append(int(row[0]))
-
 
 # remove duplicates from the data
 data = list(set(data))

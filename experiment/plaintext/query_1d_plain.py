@@ -7,10 +7,12 @@ import csv
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from config import query_config, dataset_config
-from utils import count_range_nodes, generate_random_query, write_csv
+from utils import count_range_nodes, generate_random_query, write_csv, next_power_of_2
 from termcolor import colored
 from segtree import SegmentTree1D
 
+dataset_config.update()
+dataset_config.save_to_file()
 # ! Set the number of query samples and dataset name before running the experiment in the config.py file
 
 print(colored('-'*50, color= 'red'), 
@@ -39,7 +41,7 @@ data.sort()
 print('The data loaded from csv- size:',len(data))
 
 print('The range of values in the data list:',data[0], data[-1])
-
+# data = [i+1 for i in range(16)]
 # defining the domain values range
 domain = (data[0], data[-1])
 print('domain range', domain)
@@ -65,33 +67,72 @@ print('Is the tree balanced:', seg_tree.is_balanced())
 
 print(colored('segment_tree was created successfully!', 'green'))
 #---------------------------------------------------------------------------------
-#---------------------------------------------------------------------------------
-print('-'*100)
-#---------------------------------------------------------------------------------
-print(colored('-' * 50, 'green'))
-sample_num = query_config.sample_num
-# generating sample_num random queries in range data[0], data[-1]
-print(colored(f'Generating {sample_num} random queries in the domain range: {data[0]}-{data[-1]}...', 'blue'))
-import random
-from tqdm import tqdm
+# for the sample query for domain range of m, run the query m[l+1, r-1] 
+print(data[0], data[-1])
+# check if the len of data is even
+if len(data) % 2 == 0:
+    worst_case_query = (data[0]+1, data[-1]-1)
+    print('even', worst_case_query)
+    print(data[1], data[-2])
+else:
+    worst_case_query = (data[0]+1, data[-1])
+    print('odd', worst_case_query)
 
-queries = []
-for i in range(sample_num):
-    queries.append(generate_random_query(num_dims = 1, x_range = (data[0], data[-1])))
+# run the worst case query
+print('query result sum:',seg_tree.query(worst_case_query[0], worst_case_query[1]))
+print('real sum', len(data[1:-1]))
+qr_h_ = seg_tree.qr_h
+qr_acs = seg_tree.access
+print('Number of nodes:', len(seg_tree.qr_result)) 
+print('Stoping height:', qr_h_)
+print('Number of accesses:', qr_acs)
 
-print(colored(f'{sample_num} random queries generated', 'green'))
-print(colored('-' * 50, 'green')) 
-# query the segment tree with the random queries
-# per query, get the number of returned nodes and access
-print(colored('Querying the segment tree with {sample_num} random queries...','blue'))
+print('next power of 2:', next_power_of_2(len(data)))
+# pad the data to the next power of 2 by increamenting the last element by 1 every time
+while len(data) < next_power_of_2(len(data)):
+    data.append(data[-1]+1)
 
-qr_h_, qr_acs = [], []
-for i in tqdm(range(len(queries))):
-    seg_tree.query(queries[i][0], queries[i][1])
-    qr_h_.append(seg_tree.qr_h)
-    # number of accesses per query in each level of the tree
-    qr_acs.append(seg_tree.access)
+data_dict = {val: 1 for val in data}
+# create segment tree from the padded data
+seg_tree = SegmentTree1D(data_dict)
+# run the worst case query
+print('query result sum:',seg_tree.query(data[1], data[-2]))
+print('real sum', len(data[1:-1]))
+qr_h_ = seg_tree.qr_h
+qr_acs = seg_tree.access
+print('Number of nodes:', len(seg_tree.qr_result)) 
+print('Stoping height:', qr_h_)
+print('Number of accesses:', qr_acs)
 
+exit()
+#! comment temporarily
+# #---------------------------------------------------------------------------------
+# print('-'*100)
+# #---------------------------------------------------------------------------------
+# print(colored('-' * 50, 'green'))
+# sample_num = query_config.sample_num
+# # generating sample_num random queries in range data[0], data[-1]
+# print(colored(f'Generating {sample_num} random queries in the domain range: {data[0]}-{data[-1]}...', 'blue'))
+# import random
+# from tqdm import tqdm
+
+# queries = []
+# for i in range(sample_num):
+#     queries.append(generate_random_query(num_dims = 1, x_range = (data[0], data[-1])))
+
+# print(colored(f'{sample_num} random queries generated', 'green'))
+# print(colored('-' * 50, 'green')) 
+# # query the segment tree with the random queries
+# # per query, get the number of returned nodes and access
+# print(colored('Querying the segment tree with {sample_num} random queries...','blue'))
+
+# qr_h_, qr_acs = [], []
+# for i in tqdm(range(len(queries))):
+#     seg_tree.query(queries[i][0], queries[i][1])
+#     qr_h_.append(seg_tree.qr_h)
+#     # number of accesses per query in each level of the tree
+#     qr_acs.append(seg_tree.access)
+#! end of comment temporarily
 
 # write the qr_h_ to a file
 write_csv(qr_h_, f'qr_h_1d_{dataset_config.dataset}')
