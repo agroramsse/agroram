@@ -6,21 +6,71 @@ This project is a Python-based project for running encrypted aggregation query e
 - Implementation of multidimensional Oblivious Segment Tree.
 - Implementation of quadtree and octree for height measurements on the datasets.
 
-In order to run the code, you must have Python 3.10.13 or newer versions installed. <br />
-The `req.txt` file located in the main directory lists all the required dependencies for executing the project. You can install these dependencies by using the command `pip install -r req.txt`.
 
+## Table of Contents
+
+<!-- - [Overview](#overview) -->
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)<!-- - [Project Structure](#project-structure) -->
+- [Usage](#usage)
+  - [Available Datasets](#available-datasets)
+  - [Examples](#examples)
+  - [Logs](#logs)
+
+---
+
+
+---
+
+## Prerequisites
+
+- In order to run the code, you must have Python 3.10.13 or newer versions installed. <br />
+- Recommended: A virtual environment (e.g., `venv` or `conda`) to isolate dependencies.
+- The `req.txt` file located in the main directory lists all the required dependencies for executing the project. You can install these dependencies by using the command `pip install -r req.txt`.
+
+
+## Installation
+
+1. **Clone the repository**:
+```bash
+   git clone https://github.com/your-username/your-project.git
+```
+
+## Installation
+1. **Clone the repository**:
+```bash
+   git clone https://github.com/your-username/your-project.git
+```
+
+2. **Navigate to the project directory**:
+```bash
+cd your-project
+```
+
+3. **(Optional) Create and activate a virtual environment**:
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On Linux/Mac
+# or
+venv\Scripts\activate     # On Windows
+```
+
+4. **Install dependencies (if you have req.txt)**:
+```bash
+pip install -r req.txt
+```
 
 ## Usage
-To run all the cryptogrpahic experiments on the datasets, from the project root directory, run:
+To run the cryptogrpahic experiments on the datasets, from the project root directory, run:
 ```bash
-python crypto_exp.py [--q_num Q_NUM] [--dataset DATASET_NAME] 
+python crypto_exp.py [-q Q_NUM] [-d DATASET_NAME] 
 ```
 **Usage Flags**
 
-- **`--q_num Q_NUM`** *(Optional)*  
+- **`-q Q_NUM`** *(Optional)*  
   Number of query samples. Defaults to **1000** if not specified.
 
-- **`--dataset DATASET_NAME`** *(Optional)*  
+- **`-d DATASET_NAME`** *(Optional)*  
   Dataset to run experiments on. Defaults to **all** (runs experiments for all 1D, 2D, and 3D datasets). You can choose the dataset name from the follwoing available datasets. 
 
 ## Available Datasets
@@ -53,16 +103,16 @@ python crypto_exp.py [--q_num Q_NUM] [--dataset DATASET_NAME]
 
 2. **Specify a custom number of queries** (e.g., 500):
 ```bash
-  python crypto_exp.py --q_num 500
+  python crypto_exp.py -q 500
 ```
 3. **Run a single dataset** (e.g., `spitz-1024x1024`):
 ```bash
-python crypto_exp.py --dataset spitz-1024x1024
+python crypto_exp.py -d spitz-1024x1024
 ```
 
 4. **Combine both** (e.g., 2000 queries with `amazon-books`):
 ```bash
-python crypto_exp.py --q_num 2000 --dataset amazon-books
+python crypto_exp.py -q 2000 -d amazon-books
 ```
 
 ## Logs
