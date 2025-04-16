@@ -11,7 +11,7 @@ The `req.txt` file located in the main directory lists all the required dependen
 
 
 ## Usage
-From the project root directory, run:
+To run all the cryptogrpahic experiments on the datasets, from the project root directory, run:
 ```bash
 python crypto_exp.py [--q_num Q_NUM] [--dataset DATASET_NAME] 
 ```
@@ -21,7 +21,7 @@ python crypto_exp.py [--q_num Q_NUM] [--dataset DATASET_NAME]
   Number of query samples. Defaults to **1000** if not specified.
 
 - **`--dataset DATASET_NAME`** *(Optional)*  
-  Dataset to run experiments on. Defaults to **all** (runs experiments for all 1D, 2D, and 3D datasets).
+  Dataset to run experiments on. Defaults to **all** (runs experiments for all 1D, 2D, and 3D datasets). You can choose the dataset name from the follwoing available datasets. 
 
 ## Available Datasets
 
