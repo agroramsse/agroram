@@ -30,13 +30,6 @@ This project is a Python-based project for running encrypted aggregation query e
 
 
 ## Installation
-
-1. **Clone the repository**:
-```bash
-   git clone https://github.com/your-username/your-project.git
-```
-
-## Installation
 1. **Clone the repository**:
 ```bash
    git clone https://github.com/your-username/your-project.git
