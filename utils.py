@@ -60,8 +60,8 @@ def count_range_nodes(points, *ranges):
                     break
             if in_range:
                 counter += 1
-
     return counter
+
 def random_range(range):
     l_bound = random.randint(range[0], range[1])
     u_bound = random.randint(l_bound, range[1])
