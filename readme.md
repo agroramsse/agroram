@@ -48,7 +48,7 @@ source venv/bin/activate  # On Linux/Mac
 venv\Scripts\activate     # On Windows
 ```
 
-4. **Install dependencies (if you have req.txt)**:
+4. **Install dependencies**:
 ```bash
 pip install -r req.txt
 ```
