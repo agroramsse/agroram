@@ -27,7 +27,7 @@ class query_config:
 
 
 class dataset_config:
-    dataset = 'spitz-1024x1024'
+    dataset = 'gowalla'
     dataset_path = ''
     access_per_level = []
 
