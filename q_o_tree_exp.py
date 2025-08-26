@@ -4,8 +4,7 @@ import sys
 # Add the root directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from config import query_config, dataset_config
-from utils import generate_max_access_list
+from config import dataset_config
 
 
 datasets_2d = ['cali-1024x1024', 'spitz-1024x1024', 'gowalla_100k', 'gowalla_50k','synthetic_2d_1m', 'synthetic_2d_1m_sparse', 'synthetic_2d_1m-1024x1024' ]
