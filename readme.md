@@ -1,4 +1,4 @@
-# Privacy Preserving Aggregate Range Queries with Practical Storage
+# SPARSE: Scalable Privacy-preserving Aggregate Range Queries using Segment trees
 This project is a Python-based project for running encrypted aggregation query experiments on different 1D, 2D, and 3D datasets. The project includes the follwoing implementations:  
 
 - Implementation of Tree-Based Oblivious Map from Wang et al.
