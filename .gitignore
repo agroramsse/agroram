@@ -159,7 +159,7 @@ temp/
 /old_logs
 
 #ignore reports folder and its contents
-reports/
+# reports/
 output.txt
 
 
