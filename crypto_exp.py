@@ -71,3 +71,33 @@ for dataset in datasets_3d:
     print(f'running experiment for {dataset}...')
     os.system(f'python3 experiment/query_3d.py > log/3d_{dataset}_crypto.log')
     print(f'completed experiment for {dataset}...')
+
+
+# copy all the log files to log/ folder and rename to the following format:     dataset_order = [
+    #     "Books 1D", "gowalla 1D",
+    #     "Spitz 2D", "cali 2D", "gowalla50 2D", "gowalla100 2D",
+    #     "synthetic 2D-2048-d", "synthetic 2D-2048-sp", "synthetic 2D-1024",
+    #     "nh 3D", "gowalla-3D", "synthetic 3D-128", "synthetic 3D-256"
+    # ] and check if the log file exists
+
+log_files = {
+    '1d_amazon-books_crypto.log': 'Books 1D',
+    '1d_gowalla_crypto.log': 'gowalla 1D',
+    '2d_spitz-1024x1024_crypto.log': 'Spitz 2D',
+    '2d_cali-1024x1024_crypto.log': 'cali 2D',
+    '2d_gowalla_50k_crypto.log': 'gowalla50 2D',
+    '2d_gowalla_100k_crypto.log': 'gowalla100 2D',
+    '2d_synthetic_2d_1m-1024x1024_crypto.log': 'synthetic 2D-1024',
+    '2d_synthetic_2d_1m_crypto.log': 'synthetic 2D-2048-d',
+    '2d_synthetic_2d_1m_sparse_crypto.log': 'synthetic 2D-2048-sp',
+    '3d_nh_64_crypto.log': 'nh 3D',
+    '3d_gowalla_3d_23k_crypto.log': 'gowalla-3D',
+    '3d_synthetic_3d_1m_128_crypto.log': 'synthetic 3D-128',
+    '3d_synthetic_3d_1m_256_crypto.log': 'synthetic 3D-256'
+}
+for log_file, new_name in log_files.items():
+    if os.path.exists(f'log/{log_file}'):
+        os.rename(f'log/{log_file}', f'log/{new_name}.log')
+
+
+

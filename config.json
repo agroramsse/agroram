@@ -1,1 +1,1 @@
-{"dataset": "spitz-1024x1024", "dataset_path": "datasets/spitz-1024x1024.csv", "access_per_level": [1, 2, 4, 8, 16, 32, 64, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 64, 32, 16, 8]}
+{"dataset": "amazon-books", "dataset_path": "datasets/amazon-books.csv", "access_per_level": [1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2]}

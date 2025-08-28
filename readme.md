@@ -73,3 +73,12 @@ Logs are automatically generated in the `log/` folder:
 - **2D datasets**: `log/2d_{dataset}_crypto.log`
 - **3D datasets**: `log/3d_{dataset}_crypto.log`
 
+## Regenerate Table results in the paper
+
+To generate the **Table 8** and **Table 9** data in the paper, run:
+
+```bash
+python /log/report_log.py
+
+
+

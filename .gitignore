@@ -158,3 +158,8 @@ temp/
 # ignore old logs
 /old_logs
 
+#ignore reports folder and its contents
+reports/
+output.txt
+
+
